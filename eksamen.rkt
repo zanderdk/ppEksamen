@@ -91,11 +91,34 @@
   (if (empty? lst) res
       (reverse (find-all pred (cdr lst) (if (pred (car lst)) (cons (car lst) res) res )))))
 
+(define (flatten-calendar cal)
+  (let ((apps  (appointment-flatten (all-appointments cal))))
+    (create-calendar-helper (list-ref cal 1) '() apps)
+    )
+  )
+
+(define (all-appointments cal)
+  (if (empty? (list-ref cal 2))
+      (list-ref cal 3)
+      (cons (list-ref cal 3) (map all-appointments (list-ref cal 2)))
+       ))
+
+(define (appointments-overlap? ap1 ap2)
+  ap1
+  )
 
 
+(define (appointment-flatten apps)
+  (cond ((empty? apps) apps)
+        ((appointment? apps) (list apps))
+        ((list? apps) (append (appointment-flatten (car apps)) (appointment-flatten (cdr apps))))))
 
 (define app1 (create-appointment "first" "test description" (create-datetime 2013 0 0 0 0 0) (create-datetime 2014 0 0 0 0 0)))
 (define app2 (create-appointment "secound" "test description" (create-datetime 2015 0 0 0 0 0) (create-datetime 2016 0 0 0 0 0)))
 (define app3 (create-appointment "last" "test description" (create-datetime 2017 0 0 0 0 0) (create-datetime 2018 0 0 0 0 0)))
 
+(define app-overlap1 (create-appointment "app-overlap1" "overlaps with app-overlap2" (create-datetime 2016 9 26 7 0 0) (create-datetime 2016 9 26 9 0 0)))
+(define app-overlap2 (create-appointment "app-overlap2" "overlaps with app-overlap1" (create-datetime 2016 9 26 8 0 0) (create-datetime 2016 9 26 10 0 0)))
+
 (define testCal1 (create-calendar-helper "test cal" '() (list app3 app2 app1)))
+(define testCal2 (create-calendar "test cal2" testCal1 app2 app1))
