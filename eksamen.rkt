@@ -57,10 +57,11 @@
                            (if (appointment? obj) (cons obj resapp) resapp)))))
 
 (define (create-calendar name . lst)
+  (if (not (string? name)) (error "invalid input") 
   (let ((cals (car (split-cal-and-app lst '() '())))
         (apps (car (cdr (split-cal-and-app lst '() '())))))
     (create-calendar-helper name cals apps)
-    ))
+    )))
 
 (define (get-calendar-appointments cal)
   (if (calendar? cal)
@@ -113,11 +114,24 @@
     )
   )
 
-(define (all-appointments cal)
-  (if (empty? (list-ref cal 2))
+(define (get-calendar-name cal)
+  (if (calendar? cal)
+      (list-ref cal 1)
+      (error "invalid input shoud be a calendar"))
+  )
+
+(define (get-calendar-appointments cal)
+  (if (calendar? cal)
       (list-ref cal 3)
-      (cons (list-ref cal 3) (map all-appointments (list-ref cal 2)))
-       ))
+      (error "invalid input shoud be a calendar")) 
+  )
+
+(define (all-appointments cal)
+  (let ((op (lambda (x)  (reverse (cons (get-calendar-name cal) (reverse x))) )))
+  (if (empty? (list-ref cal 2))
+      (map op (get-calendar-appointments cal))
+      (cons (map op (get-calendar-appointments cal)) (map all-appointments (list-ref cal 2)))
+       )))
 
 (define (appointments-overlap? ap1 ap2)
   (letrec ((sorted (sort-appointments (list ap1 ap2)))
@@ -135,6 +149,41 @@
     (fold #f op (map (lambda (x) (app-overlap x cal2-apps)) cal1-apps))
     ))
 
+(define (exists a lst)
+  (if (equal? (find-first (lambda (x) (equal? a x)) lst) 'None) #f #t))
+
+(define (get-datetime-year-month d)
+  (if (not (datetimetype? d)) (error "not a datetime")
+      (let ((date (epoc-to-date (list-ref d 1))))
+        (list (list-ref date 0) (list-ref date 1))
+      )))
+
+(define (find-distinct-months-in-appointment-list apps res)
+  (letrec ((get-month (lambda (a) (get-datetime-year-month (get-appointment-start a)) )))
+  (if (empty? apps) res
+      (find-distinct-months-in-appointment-list (cdr apps)
+           (if (exists (get-month (car apps)) res) res (cons (get-month (car apps)) res))))))
+
+(define (group-appointments-by-year-month apps)
+  (let ((months (find-distinct-months-in-appointment-list apps '())))
+    (map (lambda (x)
+           (list x (find-all (lambda (app) (equal? (get-datetime-year-month (get-appointment-start app)) x)) apps '()))
+           ) months)
+  ))
+
+(define (datetime-in-timespan d start end)
+  (and (datetime-before d end) (datetime-after d start))
+  )
+
+(define (appointments-in-timespan apps start end)
+  (let ((pred (lambda (app) (datetime-in-timespan (get-appointment-start app) start end) )))
+    (find-all pred apps '())
+  ))
+
+(define (group-calendar-appointments cal)
+  (let ((apps (get-calendar-appointments (flatten-calendar cal))))
+    (group-appointments-by-year-month apps)
+    ))
 
 (define (appointment-flatten apps)
   (cond ((empty? apps) apps)
@@ -153,3 +202,9 @@
 
 (define overlappingCal1 (create-calendar "overlapCal1" app1 app-overlap1))
 (define overlappingCal2 (create-calendar "overlapCal2" app2 app-overlap2))
+
+(define d2016 (create-datetime 2016 0 0 0 0 0))
+
+(define d2017 (create-datetime 2017 0 0 0 0 0))
+
+(define htmlCal (create-calendar "html cal" overlappingCal1 overlappingCal2))
