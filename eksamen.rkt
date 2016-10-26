@@ -180,15 +180,44 @@
     (find-all pred apps '())
   ))
 
-(define (group-calendar-appointments cal)
+(define (group-calendar-appointments cal start end)
   (let ((apps (get-calendar-appointments (flatten-calendar cal))))
-    (group-appointments-by-year-month apps)
+    (group-appointments-by-year-month (appointments-in-timespan apps start end))
     ))
 
 (define (appointment-flatten apps)
   (cond ((empty? apps) apps)
         ((appointment? apps) (list apps))
         ((list? apps) (append (appointment-flatten (car apps)) (appointment-flatten (cdr apps))))))
+
+(define (fold-string lst)
+  (fold "" string-append lst))
+
+(define (html-tag tag . parms)
+  (letrec ((attributes (cdr (reverse parms)) )
+           (string-attributes (map (lambda (x)
+                                     (fold-string (list (list-ref x 0) "='" (list-ref x 0) "' "))) attributes))
+           (end-tag (fold-string (list "</" tag ">")))
+           (start-tag (fold-string (list "<" tag " " (fold-string string-attributes) ">")))
+           (element (car (reverse parms))))
+  (fold-string (list start-tag element end-tag))
+  ))
+
+(define (appointment-to-html ap)
+  ap
+  )
+
+(define (datetime-to-str d)
+  (letrec ((date (epoc-to-date (list-ref d 1)))
+        (strings (list (number->string (list-ref date 0)) "/" (number->string (list-ref date 1)) "/"
+                       (number->string (list-ref date 2)) " - " (number->string (list-ref date 3)) ":"
+                       (number->string (list-ref date 4)) ":" (number->string (list-ref date 5))) ))
+    (fold-string strings))
+  )
+
+(define (datetime-to-html d)
+  (html-tag "td" (datetime-to-str d))
+  )
 
 (define app1 (create-appointment "first" "test description" (create-datetime 2013 0 0 0 0 0) (create-datetime 2014 0 0 0 0 0)))
 (define app2 (create-appointment "secound" "test description" (create-datetime 2015 0 0 0 0 0) (create-datetime 2016 0 0 0 0 0)))
