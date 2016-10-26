@@ -43,6 +43,19 @@
   (if (appointment? app) (list-ref app 4) (error "input must be an appointment") )
   )
 
+(define (get-appointment-desc app)
+  (if (appointment? app) (list-ref app 2) (error "input must be an appointment") )
+  )
+
+(define (get-appointment-name app)
+  (if (appointment? app) (list-ref app 1) (error "input must be an appointment") )
+  )
+
+(define (get-appointment-calendar app)
+  (if (appointment? app) (list-ref app 5) (error "this calendar has no appointments") )
+  )
+
+
 (define (calendar? cal)
     (cond ((not (list? cal)) #f)
           ((not (= (length cal) 4)) #f)
@@ -204,7 +217,47 @@
   ))
 
 (define (appointment-to-html ap)
-  ap
+  (fold-string (list "<tr>" (html-tag "td" (get-appointment-name ap))
+        (html-tag "td" (get-appointment-desc ap))
+        (datetime-to-html (get-appointment-start ap))
+        (datetime-to-html (get-appointment-end ap))
+        (html-tag "td" (get-appointment-calendar ap) ) "</tr>" ))
+  )
+
+(define (number->month nr)
+  (cond ((not (integer? nr)) (error "shuld be a integer"))
+         ((= nr 0) "Januar")
+         ((= nr 1) "Feburary")
+         ((= nr 2) "Marts")
+         ((= nr 3) "April")
+         ((= nr 4) "May")
+         ((= nr 5) "June")
+         ((= nr 6) "July")
+         ((= nr 7) "May")
+         ((= nr 8) "August")
+         ((= nr 9) "September")
+         ((= nr 10) "November")
+         ((= nr 10) "December"))
+  )
+
+(define (present-calendar-html cal from-time to-time)
+  (let ((apps (group-calendar-appointments cal from-time to-time)))
+        (fold-string (list "<html><body>" (fold-string (map html-table apps)) "</body></html>")))
+  )
+
+(define (html-table month)
+  (let ((table-title (fold-string (list "<tr>" "<th>" "Appointments for "
+                           (number->month (list-ref (car month) 1))
+                           " in " (number->string (list-ref (car month) 0)) "</th>" "</tr>" )))
+        (headers "<tr><th>Name</th><th>Description</th><th>From time</th><th>To time</th><th>Calendar</th></tr>")
+        (table-tag-start "<table style='width:100%' border='1'>")
+        (table-tag-end "</table><br/>")
+        (app (appointments-to-html (list-ref month 1))))
+    (fold-string (list table-tag-start table-title headers app table-tag-end)))
+ )
+
+(define (appointments-to-html apps)
+  (fold-string (list (fold-string (map appointment-to-html apps)) ))
   )
 
 (define (datetime-to-str d)
