@@ -14,6 +14,11 @@
           (eq? (car date) 'datetimetype)
           )))
 
+(define (datetime-before start end)
+    (cond ((not (datetimetype? start)) (error "start is not a datetime"))
+          ((not (datetimetype? end)) (error "end is not a datetime"))
+        (else (< (- (car (cdr start)) (car (cdr end)) ) 0) )))
+
 (define (datetime-after start end)
     (cond ((not (datetimetype? start)) (error "start is not a datetime"))
           ((not (datetimetype? end)) (error "end is not a datetime"))
@@ -27,9 +32,15 @@
 
 (define (appointment? app)
     (cond ((not (list? app)) #f)
-          ((not (and (>= (length app) 5) (<= (length app) 6))) #f)
           ((not (eq? (car app) 'appointment)) #f)
-          (else #t))
+          (else #t)))
+
+(define (get-appointment-start app)
+  (if (appointment? app) (list-ref app 3) (error "input must be an appointment") )
+  )
+
+(define (get-appointment-end app)
+  (if (appointment? app) (list-ref app 4) (error "input must be an appointment") )
   )
 
 (define (calendar? cal)
@@ -50,6 +61,11 @@
         (apps (car (cdr (split-cal-and-app lst '() '())))))
     (create-calendar-helper name cals apps)
     ))
+
+(define (get-calendar-appointments cal)
+  (if (calendar? cal)
+      (list-ref cal 3)
+      (error "ivalid input should be a calendar")))
 
 (define (create-calendar-helper name calendars appointments)
   (cond ((not (list? calendars)) (error "arguments must be a list of calendars and a list of appointments"))
@@ -104,8 +120,20 @@
        ))
 
 (define (appointments-overlap? ap1 ap2)
-  ap1
+  (letrec ((sorted (sort-appointments (list ap1 ap2)))
+           (app1 (car sorted))
+           (app2 (car (cdr sorted))))
+  (datetime-before (get-appointment-start app2) (get-appointment-end app1)))
   )
+
+(define (calendars-overlap? cal1 cal2)
+  (letrec ((cal1-apps (get-calendar-appointments cal1))
+           (cal2-apps (get-calendar-appointments cal2))
+           (op (lambda (x y) (or x y)))
+           (app-overlap (lambda (app lst)
+         (fold #f op (map (lambda (x) (appointments-overlap? app x)) lst) ))))
+    (fold #f op (map (lambda (x) (app-overlap x cal2-apps)) cal1-apps))
+    ))
 
 
 (define (appointment-flatten apps)
@@ -122,3 +150,6 @@
 
 (define testCal1 (create-calendar-helper "test cal" '() (list app3 app2 app1)))
 (define testCal2 (create-calendar "test cal2" testCal1 app2 app1))
+
+(define overlappingCal1 (create-calendar "overlapCal1" app1 app-overlap1))
+(define overlappingCal2 (create-calendar "overlapCal2" app2 app-overlap2))
