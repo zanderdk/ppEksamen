@@ -1,0 +1,26 @@
+#lang racket/load
+(load "time.rkts")
+
+(define (create-date x . y)
+  (let ((parms (cons x y)))
+    (if (= (length parms) 1) (list 'datetype (date-to-epoch (car parms)))
+        (if (= (length parms) 6) (list 'datetype (date-to-epoch parms))
+            (error "Invalid argument, should be of form year month day hour minut secound"))
+        )))
+
+(define (datetype? date)
+  (if (not (list? date)) #f
+      (if (not (= (length date) 2)) #f
+          (eq? (car date) 'datetype)
+          )))
+
+(define (create-apointment name description start end)
+  (cond ((not (string? name)) (error "name shuld be a string"))
+        ((not (string? description)) (error "name shuld be a string"))
+        ((not (datetype? start)) (error "name shuld be a string"))
+        ((not (datetype? end)) (error "name shuld be a string"))
+        
+        (else 5)  
+  ))
+
+
