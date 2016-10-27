@@ -1,3 +1,4 @@
 implementer map
 implementer getters
 curry in overlap
+primitive types to string
